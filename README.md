@@ -36,7 +36,7 @@ func main() {
 	if err != nil {
 		/* ... */
 	}
-	resp, err := c.Send("device-token",
+	resp, err := c.Send("<device token>",
 		apns.Payload{
 			APS: apns.APS{
 				Alert: apns.Alert{
