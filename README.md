@@ -56,4 +56,4 @@ func main() {
 	}
 }
 ```
-In case, if you wanna use TLS certificate instead of JWT Token, then please use `apns.WithCertificate` and `apns.WithBundleID` CallOptions to specify certificate and bundle ID, that are needed to send pushes.
+In case, if you wanna use TLS certificate instead of JWT Token, then should use `apns.WithCertificate` and `apns.WithBundleID` CallOptions to specify certificate and bundle ID, that are needed to send pushes.
