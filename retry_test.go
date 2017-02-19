@@ -3,6 +3,8 @@ package apns
 import (
 	"errors"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRetry(t *testing.T) {
@@ -15,29 +17,22 @@ func TestRetry(t *testing.T) {
 			}
 			return nil
 		}, 4)
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		if attempts != 3 {
-			t.Fatalf("expected 3 attempts\ngot: %d attempts", attempts)
-		}
+		assert.NoError(t, err)
+		assert.Equal(t, attempts, 3)
 	})
 
 	t.Run("retry=false", func(t *testing.T) {
 		err := retry(func() error {
 			return errors.New("error")
 		}, 4)
-		if err == nil {
-			t.Fatalf("expected error: %v\ngot nil", err)
-		}
+
+		assert.Error(t, err)
 	})
 
 	t.Run("retry=maxAttempts", func(t *testing.T) {
 		err := retry(func() error {
 			return connError("error")
 		}, 1)
-		if err == nil {
-			t.Fatalf("expected error: %v\ngot nil", err)
-		}
+		assert.Error(t, err)
 	})
 }

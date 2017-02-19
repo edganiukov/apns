@@ -28,8 +28,14 @@ import (
 )
 
 func main() {
+	data, err := ioutil.ReadFile("private_key.pem")
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	c, err := apns.NewClient(
-		apns.WithAuthorizationToken("bearer <jwt token>"),
+		apns.WithJWT(data, "key_identifier", "team_identifier"),
+		apns.WithBundleID("bundle_idetifier"),
 		apns.WithMaxIdleConnections(10),
 		apns.WithTimeout(5*time.Second),
 	)

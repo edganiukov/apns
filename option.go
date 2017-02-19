@@ -1,7 +1,10 @@
 package apns
 
 import (
+	"crypto/ecdsa"
 	"crypto/tls"
+	"crypto/x509"
+	"encoding/pem"
 	"errors"
 	"net/http"
 	"strconv"
@@ -61,17 +64,23 @@ func WithMaxIdleConnections(maxIdleConn int) ClientOption {
 	}
 }
 
-// WithAuthorizationToken sets the token that authorizes APNs to send push
+// WithJWT sets the JWT struct that authorizes APNs to send push
 // notifications for the specified topics. The token is in Base64URL-encoded
 // JWT format, specified as `bearer <provider token>`.
-func WithAuthorizationToken(token string) ClientOption {
+func WithJWT(privateKey []byte, keyID string, issuer string) ClientOption {
 	return func(c *Client) error {
-		if token == "" {
-			return errors.New("invalid authorization token")
+		key, err := parsePrivateKey(privateKey)
+		if err != nil {
+			return err
 		}
-		c.sendOpts = append(c.sendOpts, func(h http.Header) {
-			h.Add("authorization", token)
-		})
+		c.jwt = JWT{
+			PrivateKey: key,
+			KeyID:      keyID,
+			Issuer:     issuer,
+		}
+		if _, err := c.issueToken(); err != nil {
+			return err
+		}
 		return nil
 	}
 }
@@ -90,9 +99,9 @@ func WithBundleID(bundleID string) ClientOption {
 		if bundleID == "" {
 			return errors.New("invalid bundle ID")
 		}
-		c.sendOpts = append(c.sendOpts, func(h http.Header) {
-			h.Add("apns-topic", bundleID)
-		})
+		c.sendOpts["apns-topic"] = func(h http.Header) {
+			h.Set("apns-topic", bundleID)
+		}
 		return nil
 	}
 }
@@ -147,4 +156,20 @@ func WithCollapseID(id string) SendOption {
 	return func(h http.Header) {
 		h.Set("apns-collapse-id", id)
 	}
+}
+
+func parsePrivateKey(key []byte) (*ecdsa.PrivateKey, error) {
+	block, _ := pem.Decode(key)
+	if block == nil {
+		return nil, errors.New("not PEM encoded key")
+	}
+	pKey, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+	if err != nil {
+		return nil, err
+	}
+	k, ok := pKey.(*ecdsa.PrivateKey)
+	if !ok {
+		return nil, errors.New("not ECDSA private key")
+	}
+	return k, nil
 }
