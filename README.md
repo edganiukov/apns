@@ -1,6 +1,7 @@
 # apns
-[![Build Status](https://travis-ci.org/edganiukov/apns.svg?branch=master)](https://travis-ci.org/edganiukov/apns)
 [![GoDoc](https://godoc.org/github.com/edganiukov/apns?status.svg)](https://godoc.org/github.com/edganiukov/apns)
+[![Build Status](https://travis-ci.org/edganiukov/apns.svg?branch=master)](https://travis-ci.org/edganiukov/apns)
+[![Sourcegraph](https://sourcegraph.com/github.com/edganiukov/apns/-/badge.svg)](https://sourcegraph.com/github.com/edganiukov/apns?badge)
 
 Golang client library for Apple Push Notification service via HTTP2. More information on [Apple Push Notification Service](https://developer.apple.com/library/content/documentation/NetworkingInternet/Conceptual/RemoteNotificationsPG/APNSOverview.html)
 
