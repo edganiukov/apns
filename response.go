@@ -3,7 +3,6 @@ package apns
 import (
 	"encoding/json"
 	"errors"
-	"time"
 )
 
 // Possible error codes included in the reason key of a response’s JSON payload.
@@ -100,15 +99,15 @@ func (e serverError) Timeout() bool {
 // Response represents response object from APN service.
 type Response struct {
 	NotificationID string
-	Timestamp      time.Time
+	Timestamp      int64
 	Error          error
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (r *Response) UnmarshalJSON(data []byte) error {
 	var rawResp struct {
-		Reason    string    `json:"reason"`
-		Timestamp time.Time `json:"timestamp"`
+		Reason    string `json:"reason"`
+		Timestamp int64  `json:"timestamp"`
 	}
 	if err := json.Unmarshal(data, &rawResp); err != nil {
 		return err
