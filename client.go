@@ -29,7 +29,7 @@ type JWT struct {
 // Client represents the Apple Push Notification Service that you send notifications to.
 type Client struct {
 	http     *http.Client
-	jwt      JWT
+	jwt      *JWT
 	sendOpts map[string]SendOption
 	endpoint string
 }
@@ -103,6 +103,14 @@ func (c *Client) do(req *http.Request) (*Response, error) {
 		return response, nil
 	}
 	if resp.StatusCode == http.StatusForbidden {
+		if c.jwt == nil {
+			if resp.StatusCode >= http.StatusInternalServerError {
+				return nil, serverError(fmt.Sprintf("%d error: %s", resp.StatusCode, resp.Status))
+			}
+			return nil, fmt.Errorf("%d error: %s", resp.StatusCode, resp.Status)
+		}
+
+		// in case of using JWT
 		token, err := c.issueToken()
 		if err != nil {
 			return nil, err

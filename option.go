@@ -73,7 +73,7 @@ func WithJWT(privateKey []byte, keyID string, issuer string) ClientOption {
 		if err != nil {
 			return err
 		}
-		c.jwt = JWT{
+		c.jwt = &JWT{
 			PrivateKey: key,
 			KeyID:      keyID,
 			Issuer:     issuer,
