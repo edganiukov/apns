@@ -7,20 +7,6 @@ Golang client library for Apple Push Notification service via HTTP2. More inform
 
 ### Getting Started
 -------------------
-To install apns, use `go get`:
-
-```bash
-go get github.com/edganiukov/apns
-```
-or `govendor`:
-
-```bash
-govendor fetch github.com/edganiukov/apns
-```
-or other tool for vendoring.
-
-### Sample Usage
-----------------
 Here is a simple example illustrating how to use APNS library:
 ```go
 package main

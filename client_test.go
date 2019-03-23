@@ -16,17 +16,19 @@ func TestSend(t *testing.T) {
 	assert.NoError(t, err)
 
 	t.Run("send=success", func(t *testing.T) {
-		server := httptest.NewUnstartedServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-			assert.Equal(t, req.Header.Get("apns-collapse-id"), "test-collapse-id")
-			assert.Equal(t, req.Header.Get("apns-expiration"), "10")
-			assert.Equal(t, req.Header.Get("apns-priority"), "5")
+		server := httptest.NewUnstartedServer(http.HandlerFunc(
+			func(rw http.ResponseWriter, req *http.Request) {
+				assert.Equal(t, req.Header.Get("apns-collapse-id"), "test-collapse-id")
+				assert.Equal(t, req.Header.Get("apns-expiration"), "10")
+				assert.Equal(t, req.Header.Get("apns-priority"), "5")
 
-			rw.Header().Set("Content-Type", "application/json")
-			rw.Header().Set("apns-id", "123e4567-e89b-12d3-a456-42665544000")
+				rw.Header().Set("Content-Type", "application/json")
+				rw.Header().Set("apns-id", "123e4567-e89b-12d3-a456-42665544000")
 
-			rw.WriteHeader(http.StatusOK)
-			rw.Write([]byte(`{"reason": ""}`))
-		}))
+				rw.WriteHeader(http.StatusOK)
+				rw.Write([]byte(`{"reason": ""}`))
+			},
+		))
 		http2.ConfigureServer(server.Config, nil)
 		server.Start()
 		defer server.Close()
@@ -37,8 +39,8 @@ func TestSend(t *testing.T) {
 			WithMaxIdleConnections(10),
 			WithTimeout(2*time.Second),
 		)
-
 		assert.NoError(t, err)
+		assert.NotNil(t, c)
 
 		resp, err := c.Send("test-token",
 			Payload{
