@@ -43,7 +43,7 @@ type APS struct {
 	MutableContent *int `json:"mutable-content,omitempty"`
 
 	// The identifier of the window brought forward. The value of this key will be populated on the UNNotificationContent object created from the push payload.
-	TargetContentId string `json:"target-content-id,omitempty"`
+	TargetContentID string `json:"target-content-id,omitempty"`
 }
 
 // Alert represents aler dictionary.
