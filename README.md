@@ -21,8 +21,8 @@ func main() {
 	}
 
 	c, err := apns.NewClient(
-		apns.WithJWT(data, "key_identifier", "team_identifier"),
-		apns.WithBundleID("bundle_identifier"),
+		apns.WithJWT(data, "key_id", "team_id"),
+		apns.WithAppID("app_id"),
 		apns.WithMaxIdleConnections(10),
 		apns.WithTimeout(5*time.Second),
 	)
@@ -53,6 +53,6 @@ func main() {
     /* ... */
 }
 ```
-In case, if you want to use TLS certificate instead of JWT Token, then should
-use `apns.WithCertificate` and `apns.WithBundleID` CallOptions to specify
-certificate and bundle ID, that are needed to send push notifications.
+In case, if you want to use TLS certificate instead of JWT tokens, then should
+use `apns.WithCertificate` and `apns.WithAppID` `ClientOption` to specify
+certificate and app ID, that are needed to send push notifications.
