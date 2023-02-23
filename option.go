@@ -55,9 +55,9 @@ func WithMaxIdleConnections(maxIdleConn int) ClientOption {
 	}
 }
 
-// WithJWT sets the JWT struct that authorizes APNs to send push
-// notifications for the specified topics. The token is in Base64URL-encoded
-// JWT format, specified as `bearer <provider token>`.
+// WithJWT sets the JWT struct that is used to generate a JWT token to authorizes APNs to send push
+// notifications for the specified topics. The token is in Base64URL-encoded JWT format, specified as
+// `bearer <provider token>`.
 func WithJWT(privateKey []byte, keyID string, issuer string) ClientOption {
 	return func(c *Client) error {
 		key, err := parsePrivateKey(privateKey)
@@ -77,14 +77,8 @@ func WithJWT(privateKey []byte, keyID string, issuer string) ClientOption {
 }
 
 // WithBundleID sets HTTP2 header `apns-topic` with is bundle ID of an app.
-// The certificate you create in your developer account must include
-// the capability for this topic. If your certificate includes multiple topics,
-// you must specify a value for this header. If you omit this request header
-// and your APNs certificate does not specify multiple topics, the APNs server
-// uses the certificate’s Subject as the default topic. If you are using
-// a provider token instead of a certificate, you must specify a value
-// for this request header. The topic you provide should be provisioned for
-// the your team named in your developer account.
+//
+// Deprecated: use [WithAppID]
 func WithBundleID(bundleID string) ClientOption {
 	return func(c *Client) error {
 		if bundleID == "" {
@@ -94,6 +88,26 @@ func WithBundleID(bundleID string) ClientOption {
 		c.mtx.Lock()
 		c.sendOpts["apns-topic"] = func(h http.Header) {
 			h.Set("apns-topic", bundleID)
+		}
+		c.mtx.Unlock()
+
+		return nil
+	}
+}
+
+// WithAppID sets HTTP2 header `apns-topic` with an application ID.
+// An App ID identifies your app in a provisioning profile. It is a two-part string used to identify one or more apps
+// from a single development team. There are two types of App IDs: an explicit App ID, used for a single app, and a
+// wildcard App ID, used for a set of apps.
+func WithAppID(appID string) ClientOption {
+	return func(c *Client) error {
+		if appID == "" {
+			return errors.New("invalid application ID")
+		}
+
+		c.mtx.Lock()
+		c.sendOpts["apns-topic"] = func(h http.Header) {
+			h.Set("apns-topic", appID)
 		}
 		c.mtx.Unlock()
 
