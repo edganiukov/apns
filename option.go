@@ -8,7 +8,6 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
-	"time"
 )
 
 // ClientOption defines athe APNS Client option.
@@ -40,14 +39,6 @@ func WithCertificate(crt tls.Certificate) ClientOption {
 		}
 		config.BuildNameToCertificate()
 		c.http.Transport.(*http.Transport).TLSClientConfig = config
-		return nil
-	}
-}
-
-// WithTimeout sets HTTP Client timeout.
-func WithTimeout(t time.Duration) ClientOption {
-	return func(c *Client) error {
-		c.http.Timeout = t
 		return nil
 	}
 }
@@ -99,9 +90,13 @@ func WithBundleID(bundleID string) ClientOption {
 		if bundleID == "" {
 			return errors.New("invalid bundle ID")
 		}
+
+		c.mtx.Lock()
 		c.sendOpts["apns-topic"] = func(h http.Header) {
 			h.Set("apns-topic", bundleID)
 		}
+		c.mtx.Unlock()
+
 		return nil
 	}
 }

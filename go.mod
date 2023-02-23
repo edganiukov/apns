@@ -1,10 +1,13 @@
 module github.com/edganiukov/apns
 
-go 1.12
+go 1.20
+
+require (
+	github.com/golang-jwt/jwt/v4 v4.4.3
+	github.com/stretchr/testify v1.3.0
+)
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/stretchr/testify v1.3.0
-	golang.org/x/net v0.0.0-20190322120337-addf6b3196f6
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 )

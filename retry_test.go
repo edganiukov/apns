@@ -8,7 +8,7 @@ import (
 )
 
 func TestRetry(t *testing.T) {
-	t.Run("retry=succcess", func(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
 		var attempts int
 		err := retry(func() error {
 			attempts++
@@ -21,7 +21,7 @@ func TestRetry(t *testing.T) {
 		assert.Equal(t, attempts, 3)
 	})
 
-	t.Run("retry=false", func(t *testing.T) {
+	t.Run("failed without retry", func(t *testing.T) {
 		err := retry(func() error {
 			return errors.New("error")
 		}, 4)
@@ -29,7 +29,7 @@ func TestRetry(t *testing.T) {
 		assert.Error(t, err)
 	})
 
-	t.Run("retry=maxAttempts", func(t *testing.T) {
+	t.Run("failed with max attempts", func(t *testing.T) {
 		err := retry(func() error {
 			return connError("error")
 		}, 1)

@@ -1,21 +1,23 @@
 package apns
 
 import (
-	"io/ioutil"
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/net/http2"
 )
 
-func TestSend(t *testing.T) {
-	pKey, err := ioutil.ReadFile("testdata/key.pem")
-	assert.NoError(t, err)
+var testPrivateKey = []byte(`-----BEGIN PRIVATE KEY-----
+MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgddHKwoJxaoSW6UQt
+DIPli9xODjt+6DWVjgELdB8NOHKhRANCAATzgguZzRtO6prpwKRBsCA06seZMvDd
+y6bx7sCtRZz9kvZjSLox5kEqVaEZgEgDwUIKY29Wl0weel+1hChax3OS
+-----END PRIVATE KEY-----`)
 
-	t.Run("send=success", func(t *testing.T) {
+func TestSend(t *testing.T) {
+	t.Run("successful", func(t *testing.T) {
 		server := httptest.NewUnstartedServer(http.HandlerFunc(
 			func(rw http.ResponseWriter, req *http.Request) {
 				assert.Equal(t, req.Header.Get("apns-collapse-id"), "test-collapse-id")
@@ -29,20 +31,20 @@ func TestSend(t *testing.T) {
 				rw.Write([]byte(`{"reason": ""}`))
 			},
 		))
-		http2.ConfigureServer(server.Config, nil)
 		server.Start()
 		defer server.Close()
 
 		c, err := NewClient(
-			WithJWT(pKey, "key_id", "issuer"),
+			WithJWT(testPrivateKey, "key_id", "issuer"),
 			WithEndpoint(server.URL),
 			WithMaxIdleConnections(10),
-			WithTimeout(2*time.Second),
 		)
 		assert.NoError(t, err)
 		assert.NotNil(t, c)
 
-		resp, err := c.Send("test-token",
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		resp, err := c.Send(ctx, "test-token",
 			Payload{
 				APS: APS{
 					Alert: Alert{
@@ -59,7 +61,7 @@ func TestSend(t *testing.T) {
 		assert.Equal(t, resp.NotificationID, "123e4567-e89b-12d3-a456-42665544000")
 	})
 
-	t.Run("send=fail", func(t *testing.T) {
+	t.Run("invalid device token", func(t *testing.T) {
 		server := httptest.NewUnstartedServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 			rw.Header().Set("Content-Type", "application/json")
 			rw.Header().Set("apns-id", "123e4567-e89b-12d3-a456-42665544000")
@@ -67,19 +69,17 @@ func TestSend(t *testing.T) {
 			rw.WriteHeader(http.StatusBadRequest)
 			rw.Write([]byte(`{"reason": "BadDeviceToken"}`))
 		}))
-		http2.ConfigureServer(server.Config, nil)
 		server.Start()
 		defer server.Close()
 
 		c, err := NewClient(
-			WithJWT(pKey, "key_id", "issuer"),
+			WithJWT(testPrivateKey, "key_id", "issuer"),
 			WithEndpoint(server.URL),
 			WithMaxIdleConnections(10),
-			WithTimeout(2*time.Second),
 		)
 		assert.NoError(t, err)
 
-		resp, err := c.Send("",
+		resp, err := c.Send(context.Background(), "",
 			Payload{
 				APS: APS{
 					Alert: Alert{

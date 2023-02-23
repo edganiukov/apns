@@ -2,21 +2,21 @@ package apns
 
 import (
 	"bytes"
+	"context"
 	"crypto/ecdsa"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
-	jwt "github.com/dgrijalva/jwt-go"
-
-	"golang.org/x/net/http2"
+	"github.com/golang-jwt/jwt/v4"
 )
 
 // APN service endpoint URLs.
 const (
-	DevelopmentGateway = "https://api.development.push.apple.com"
-	ProductionGateway  = "https://api.push.apple.com"
+	SandboxGateway    = "https://api.sandbox.push.apple.com"
+	ProductionGateway = "https://api.push.apple.com"
 )
 
 // JWT represents data for JWT token generation.
@@ -29,9 +29,11 @@ type JWT struct {
 // Client represents the Apple Push Notification Service that you send notifications to.
 type Client struct {
 	http     *http.Client
-	jwt      *JWT
-	sendOpts map[string]SendOption
 	endpoint string
+	jwt      *JWT
+
+	mtx      sync.RWMutex
+	sendOpts map[string]SendOption
 }
 
 // NewClient creates new AONS client based on defined Options.
@@ -48,30 +50,28 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 			return nil, err
 		}
 	}
-	if err := http2.ConfigureTransport(c.http.Transport.(*http.Transport)); err != nil {
-		return nil, err
-	}
 
 	return c, nil
 }
 
 // Send sends Notification to the APN service.
-func (c *Client) Send(token string, p Payload, opts ...SendOption) (*Response, error) {
-	req, err := c.prepareRequest(token, p, opts...)
+func (c *Client) Send(ctx context.Context, token string, p Payload, opts ...SendOption) (*Response, error) {
+	req, err := c.prepareRequest(ctx, token, p, opts...)
 	if err != nil {
 		return nil, err
 	}
-	return c.do(req)
+	return c.do(ctx, req)
 }
 
-func (c *Client) prepareRequest(token string, p Payload, opts ...SendOption) (*http.Request, error) {
+func (c *Client) prepareRequest(ctx context.Context, tok string, p Payload, opts ...SendOption) (*http.Request, error) {
 	data, err := json.Marshal(p)
 	if err != nil {
 		return nil, err
 	}
-	req, err := http.NewRequest(
+	req, err := http.NewRequestWithContext(
+		ctx,
 		"POST",
-		fmt.Sprintf("%s/3/device/%s", c.endpoint, token),
+		fmt.Sprintf("%s/3/device/%s", c.endpoint, tok),
 		bytes.NewBuffer(data),
 	)
 	if err != nil {
@@ -79,17 +79,20 @@ func (c *Client) prepareRequest(token string, p Payload, opts ...SendOption) (*h
 	}
 	req.Header.Set("Content-Type", "application/json")
 
+	c.mtx.RLock()
 	// apply send options
 	for _, o := range c.sendOpts {
 		o(req.Header)
 	}
+	c.mtx.RUnlock()
+
 	for _, o := range opts {
 		o(req.Header)
 	}
 	return req, nil
 }
 
-func (c *Client) do(req *http.Request) (*Response, error) {
+func (c *Client) do(ctx context.Context, req *http.Request) (*Response, error) {
 	resp, err := c.http.Do(req)
 	if err != nil {
 		return nil, connError(err.Error())
@@ -99,24 +102,20 @@ func (c *Client) do(req *http.Request) (*Response, error) {
 	response := new(Response)
 	response.NotificationID = resp.Header.Get("apns-id")
 
-	if resp.StatusCode == http.StatusOK {
+	switch resp.StatusCode {
+	case http.StatusOK:
 		return response, nil
-	}
-	if resp.StatusCode == http.StatusForbidden {
-		if c.jwt == nil {
-			if resp.StatusCode >= http.StatusInternalServerError {
-				return nil, serverError(fmt.Sprintf("%d error: %s", resp.StatusCode, resp.Status))
+	case http.StatusForbidden:
+		if c.jwt != nil {
+			token, err := c.issueToken()
+			if err != nil {
+				return nil, err
 			}
-			return nil, fmt.Errorf("%d error: %s", resp.StatusCode, resp.Status)
+			req.Header.Set("authorization", fmt.Sprintf("bearer %s", token))
+			return c.do(ctx, req)
 		}
-
-		// in case of using JWT
-		token, err := c.issueToken()
-		if err != nil {
-			return nil, err
-		}
-		req.Header.Set("authorization", fmt.Sprintf("bearer %s", token))
-		return c.do(req)
+	case http.StatusInternalServerError, http.StatusServiceUnavailable:
+		return nil, serverError(fmt.Sprintf("%d error: %s", resp.StatusCode, resp.Status))
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(response); err != nil {
@@ -137,8 +136,11 @@ func (c *Client) issueToken() (string, error) {
 		return "", err
 	}
 
+	c.mtx.Lock()
 	c.sendOpts["authorization"] = func(h http.Header) {
 		h.Set("authorization", fmt.Sprintf("bearer %s", t))
 	}
+	c.mtx.Unlock()
+
 	return t, nil
 }

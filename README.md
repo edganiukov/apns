@@ -1,9 +1,8 @@
 # apns
-[![GoDoc](https://godoc.org/github.com/edganiukov/apns?status.svg)](https://godoc.org/github.com/edganiukov/apns)
-[![Build Status](https://travis-ci.org/edganiukov/apns.svg?branch=master)](https://travis-ci.org/edganiukov/apns)
-[![Go Report Card](https://goreportcard.com/badge/github.com/edganiukov/apns)](https://goreportcard.com/report/github.com/edganiukov/apns)
+[![GoDoc](https://pkg.go.dev/badge/github.com/edganiukov/apns)](https://pkg.go.dev/github.com/edganiukov/apns)
 
-Golang client library for Apple Push Notification service via HTTP2. More information on [Apple Push Notification Service](https://developer.apple.com/library/content/documentation/NetworkingInternet/Conceptual/RemoteNotificationsPG/APNSOverview.html)
+Golang client library for Apple Push Notification service via HTTP2.
+More information on [Apple Push Notification Service](https://developer.apple.com/library/content/documentation/NetworkingInternet/Conceptual/RemoteNotificationsPG/APNSOverview.html)
 
 ### Getting Started
 -------------------
@@ -23,14 +22,17 @@ func main() {
 
 	c, err := apns.NewClient(
 		apns.WithJWT(data, "key_identifier", "team_identifier"),
-		apns.WithBundleID("bundle_idetifier"),
+		apns.WithBundleID("bundle_identifier"),
 		apns.WithMaxIdleConnections(10),
 		apns.WithTimeout(5*time.Second),
 	)
 	if err != nil {
-		/* ... */
+		log.Fatal(err)
 	}
-	resp, err := c.Send("<device token>",
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	resp, err := c.Send(ctx, "<device token>",
 		apns.Payload{
 			APS: apns.APS{
 				Alert: apns.Alert{
@@ -45,8 +47,12 @@ func main() {
 	)
 
 	if err != nil {
-		/* ... */
+		log.Fatal(err)
 	}
+
+    /* ... */
 }
 ```
-In case, if you wanna use TLS certificate instead of JWT Token, then should use `apns.WithCertificate` and `apns.WithBundleID` CallOptions to specify certificate and bundle ID, that are needed to send pushes.
+In case, if you want to use TLS certificate instead of JWT Token, then should
+use `apns.WithCertificate` and `apns.WithBundleID` CallOptions to specify
+certificate and bundle ID, that are needed to send push notifications.
