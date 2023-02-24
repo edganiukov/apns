@@ -30,8 +30,8 @@ func WithEndpoint(endpoint string) ClientOption {
 }
 
 // WithCertificate is Option to configure TLS certificates for HTTP connection.
-// Certificates should be used with BundleID, that is possible to set by
-// `WithBundleID` option.
+// Certificates should be used with app ID, that is possible to set by
+// [WithAppID] option.
 func WithCertificate(crt tls.Certificate) ClientOption {
 	return func(c *Client) error {
 		config := &tls.Config{
