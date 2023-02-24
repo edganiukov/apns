@@ -167,6 +167,45 @@ func WithCollapseID(id string) SendOption {
 	}
 }
 
+// WithPushType sets a value of the `apns-push-type` header that accurately reflect the contents of your notification’s
+// payload. If there’s a mismatch, or if the header is missing on required systems, APNs may return an error, delay the
+// delivery of the notification, or drop it altogether.
+// Required for watchOS 6 and later; recommended for macOS, iOS, tvOS, and iPadOS)
+
+// The apns-push-type header field has the following valid values. The descriptions below describe when and how to use
+// these values.
+//
+//   - alert
+//     Use the alert push type for notifications that trigger a user interaction—for example, an alert, badge, or sound.
+//
+//   - background
+//     Use the background push type for notifications that deliver content in the background, and don’t trigger any user
+//     interactions.
+//
+//   - location
+//     Use the location push type for notifications that request a user’s location.
+//
+//   - voip
+//     Use the voip push type for notifications that provide information about an incoming Voice-over-IP (VoIP) call.
+//
+//   - complication
+//     Use the complication push type for notifications that contain update information for a watchOS app’s
+//     complications.
+//
+//   - fileprovider
+//     Use the fileprovider push type to signal changes to a File Provider extension.
+//
+//   - mdm
+//     Use the mdm push type for notifications that tell managed devices to contact the MDM server.
+//
+//   - liveactivity
+//     Use the liveactivity push type to send a remote push notification that updates or ends an ongoing Live Activity.
+func WithPushType(t string) SendOption {
+	return func(h http.Header) {
+		h.Set("apns-push-type", t)
+	}
+}
+
 func parsePrivateKey(key []byte) (*ecdsa.PrivateKey, error) {
 	block, _ := pem.Decode(key)
 	if block == nil {
