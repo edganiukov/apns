@@ -38,6 +38,7 @@ func main() {
 					Title: "Test Push",
 					Body:  "Hi world",
 				},
+				Badge: apns.Pointer(1),
 			},
 		},
 		apns.WithExpiration(10),

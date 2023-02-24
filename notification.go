@@ -108,3 +108,8 @@ type Alert struct {
 	// first instance of the %@ character in the string, the second item replaces the second instance, and so on.
 	LocArgs []string `json:"loc-args,omitempty"`
 }
+
+// Pointer returns a pointer to a provided value.
+func Pointer[T any](v T) *T {
+	return &v
+}

@@ -86,6 +86,7 @@ func TestSend(t *testing.T) {
 						Title: "hi",
 						Body:  "world",
 					},
+					Badge: Pointer(1),
 				},
 			},
 		)
