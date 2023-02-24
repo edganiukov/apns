@@ -35,6 +35,7 @@ func TestSend(t *testing.T) {
 		defer server.Close()
 
 		c, err := NewClient(
+			context.Background(),
 			WithJWT(testPrivateKey, "key_id", "issuer"),
 			WithEndpoint(server.URL),
 			WithMaxIdleConnections(10),
@@ -73,6 +74,7 @@ func TestSend(t *testing.T) {
 		defer server.Close()
 
 		c, err := NewClient(
+			context.Background(),
 			WithJWT(testPrivateKey, "key_id", "issuer"),
 			WithEndpoint(server.URL),
 			WithMaxIdleConnections(10),

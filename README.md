@@ -21,6 +21,7 @@ func main() {
 	}
 
 	c, err := apns.NewClient(
+		context.Background(),
 		apns.WithJWT(data, "key_id", "team_id"),
 		apns.WithAppID("app_id"),
 		apns.WithMaxIdleConnections(10),
@@ -50,7 +51,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-    /* ... */
+	/* ... */
 }
 ```
 In case, if you want to use TLS certificate instead of JWT tokens, then should

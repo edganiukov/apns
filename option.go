@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 )
@@ -55,23 +56,27 @@ func WithMaxIdleConnections(maxIdleConn int) ClientOption {
 	}
 }
 
-// WithJWT sets the JWT struct that is used to generate a JWT token to authorizes APNs to send push
+// WithJWT sets the JWT config that is used to generate a JWT token to authorize against APNS to send push
 // notifications for the specified topics. The token is in Base64URL-encoded JWT format, specified as
 // `bearer <provider token>`.
-func WithJWT(privateKey []byte, keyID string, issuer string) ClientOption {
+func WithJWT(privateKey []byte, keyID string, teamID string) ClientOption {
 	return func(c *Client) error {
 		key, err := parsePrivateKey(privateKey)
 		if err != nil {
 			return err
 		}
-		c.jwt = &JWT{
+		c.jwtConfig = &JWTConfig{
 			PrivateKey: key,
 			KeyID:      keyID,
-			Issuer:     issuer,
+			Issuer:     teamID,
 		}
-		if _, err := c.issueToken(); err != nil {
+
+		token, err := c.issueToken()
+		if err != nil {
 			return err
 		}
+
+		c.sendOpts["authorization"] = WithAuthorizationToken(token)
 		return nil
 	}
 }
@@ -85,11 +90,9 @@ func WithBundleID(bundleID string) ClientOption {
 			return errors.New("invalid bundle ID")
 		}
 
-		c.mtx.Lock()
 		c.sendOpts["apns-topic"] = func(h http.Header) {
 			h.Set("apns-topic", bundleID)
 		}
-		c.mtx.Unlock()
 
 		return nil
 	}
@@ -105,17 +108,15 @@ func WithAppID(appID string) ClientOption {
 			return errors.New("invalid application ID")
 		}
 
-		c.mtx.Lock()
 		c.sendOpts["apns-topic"] = func(h http.Header) {
 			h.Set("apns-topic", appID)
 		}
-		c.mtx.Unlock()
 
 		return nil
 	}
 }
 
-// SendOption allows to set custom Headers for each notification, such apns-id,
+// SendOption allows to set custom Headers for each notification, such as apns-id,
 // expiration time, priority, etc.
 type SendOption func(h http.Header)
 
@@ -203,6 +204,13 @@ func WithCollapseID(id string) SendOption {
 func WithPushType(t string) SendOption {
 	return func(h http.Header) {
 		h.Set("apns-push-type", t)
+	}
+}
+
+// WithAuthorizationToken sets `Authorization` header with a bearer token.
+func WithAuthorizationToken(t string) SendOption {
+	return func(h http.Header) {
+		h.Set("authorization", fmt.Sprintf("bearer %s", t))
 	}
 }
 
