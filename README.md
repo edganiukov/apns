@@ -24,7 +24,6 @@ func main() {
 		apns.WithJWT(data, "key_id", "team_id"),
 		apns.WithAppID("app_id"),
 		apns.WithMaxIdleConnections(10),
-		apns.WithTimeout(5*time.Second),
 	)
 	if err != nil {
 		log.Fatal(err)
